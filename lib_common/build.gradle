@@ -1,0 +1,39 @@
+apply plugin: 'com.android.library'
+
+//赋值与引用
+def androidConfig = rootProject.ext.androidConfig
+def depConfig = rootProject.ext.depConfig
+
+android {
+    compileSdkVersion androidConfig.compileSdkVersion
+    buildToolsVersion androidConfig.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion androidConfig.minSdkVersion
+        targetSdkVersion androidConfig.targetSdkVersion
+        versionCode androidConfig.versionCode
+        versionName androidConfig.versionName
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    //依赖第三方库
+    api depConfig.appcompat
+    api depConfig.constraintlayout
+    api depConfig.recyclerview
+    api depConfig.material
+    api depConfig.arouterApi
+    api depConfig.vlayout
+    api depConfig.banner
+    api depConfig.marqueeview
+    api depConfig.glide
+}

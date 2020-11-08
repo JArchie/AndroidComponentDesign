@@ -1,0 +1,96 @@
+if (isRelease) { //如果是发布版本，各个模块都不能独立运行
+    apply plugin: 'com.android.library'
+} else {
+    apply plugin: 'com.android.application'
+}
+
+//赋值与引用
+def androidConfig = rootProject.ext.androidConfig
+def appId = rootProject.ext.appId
+def depConfig = rootProject.ext.depConfig
+def hostUrl = rootProject.ext.hostUrl
+
+android {
+    //上面定义了三个属性，分别指向公共配置config.gradle中定义的集合，然后根据集合中的key来获取对应的值
+    compileSdkVersion androidConfig.compileSdkVersion
+    buildToolsVersion androidConfig.buildToolsVersion
+    defaultConfig {
+        if (!isRelease) { //如果是集成化模式，不能有applicationId
+            applicationId appId.home //组件化模式独立运行时才可以有applicationId
+        }
+        minSdkVersion androidConfig.minSdkVersion
+        targetSdkVersion androidConfig.targetSdkVersion
+        versionCode androidConfig.versionCode
+        versionName androidConfig.versionName
+        buildConfigField("boolean", "isRelease", String.valueOf(isRelease))
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [AROUTER_MODULE_NAME: project.getName()]
+            }
+        }
+    }
+
+    //签名配置有个隐形的坑（必须写在buildTypes之前）
+    signingConfigs {
+        debug {
+            //注意：填错了编译不通过还找不到问题
+            storeFile file('/Users/Jarchie/.android/debug.keystore')
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+        release {
+            //签名证书文件
+            storeFile file('/Users/Jarchie/Desktop/AndroidProjects/AndroidComponentDesign/component.jks')
+            //签名证书文件的密码
+            storePassword "123456"
+            //密钥别名
+            keyAlias "zujian"
+            //密钥密码
+            keyPassword "123456"
+            //是否开启v2打包
+            v2SigningEnabled true
+        }
+    }
+
+    buildTypes {
+        //public void buildConfigField(@NonNull String type,@NonNull String name,@NonNull String value){}
+        //此方法接收三个非空参数：①确定值的类型；②指定key的名字；③传值（必须是String）
+        //注意：不能在android根节点，只能在defaultConfig或者buildTypes节点下
+        debug {
+            signingConfig signingConfigs.debug
+            buildConfigField("String", "DEBUG_URL", "\"${hostUrl.debug}\"")
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+            buildConfigField("String", "RELEASE_URL", "\"${hostUrl.release}\"")
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    //配置资源路径，方便测试环境，打包不集成到正式环境
+    sourceSets{
+        main{
+            if (!isRelease){
+                //如果是组件化模式，需要单独运行时
+                manifest.srcFile 'src/main/debug/AndroidManifest.xml'
+            }else {
+                //集成化模式，整个项目打包到apk
+                manifest.srcFile 'src/main/AndroidManifest.xml'
+                java{
+                    //release时debug目录下文件不需要合并到主工程
+                    exclude '**/debug/**'
+                }
+            }
+        }
+    }
+
+}
+
+dependencies {
+    //公共基础库
+    implementation project(':lib_common')
+    annotationProcessor depConfig.arouterCompiler
+}

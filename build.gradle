@@ -1,0 +1,30 @@
+//根目录下的build.gradle头部引入自定义config.gradle，相当于layout布局中加入include标签
+apply from: "config.gradle"
+
+buildscript {
+    repositories {
+        //添加阿里云镜像
+        maven{
+            url "http://maven.aliyun.com/nexus/content/groups/public/"
+        }
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.3'
+    }
+}
+
+allprojects {
+    repositories {
+        maven{
+            url "http://maven.aliyun.com/nexus/content/groups/public/"
+        }
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
